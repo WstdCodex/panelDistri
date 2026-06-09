@@ -12,7 +12,7 @@
 
     /* Toda la página ocupa exactamente la pantalla, sin scroll */
     html, body { width: 100vw; height: 100vh; overflow: hidden; }
-    body { background: #0f172a; color: #f1f5f9; display: flex; flex-direction: column; }
+    body { background: #131f2e; color: #f1f5f9; display: flex; flex-direction: column; }
 
     /* Números y pedidos en fuente condensada */
     .num { font-family: 'Barlow Condensed', sans-serif; }
@@ -42,6 +42,9 @@
     .tag-baja  { background:#0369a1; color:#fff; }
     .tag       { padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 800;
                   letter-spacing: .08em; text-transform: uppercase; }
+    .tag-click { cursor: pointer; user-select: none; transition: opacity .15s, transform .15s; }
+    .tag-click:hover  { opacity: .8; transform: scale(1.06); }
+    .tag-click:active { transform: scale(0.95); }
 
     /* Líneas separadoras de la tabla */
     .tbl-row { border-bottom: 1px solid #1e293b; }
@@ -153,7 +156,7 @@
      FILA INFERIOR: INFORME + MOTIVOS
 ════════════════════════════════════════════════════════════ -->
 <footer style="flex-shrink:0; height:220px; border-top:2px solid #334155;
-               display:grid; grid-template-columns:340px 1fr; gap:0; background:#0f172a;">
+               display:grid; grid-template-columns:340px 1fr; gap:0; background:#131f2e;">
 
   <!-- Bloque INFORME -->
   <div style="border-right:2px solid #334155; padding:14px 20px; display:flex; flex-direction:column; gap:10px;">
@@ -210,6 +213,8 @@
      JAVASCRIPT
 ════════════════════════════════════════════════════════════ -->
 <script>
+  let pedidosData = [];
+
   // ── Reloj ──────────────────────────────────────────────────
   (function reloj() {
     const now = new Date();
@@ -232,10 +237,35 @@
             <div style="font-size:11px; text-align:center; color:#94a3b8;">${actual}/${total}</div>`;
   }
 
-  function priorTag(p) {
-    const cls = (p||'').toUpperCase() === 'ALTA' ? 'tag-alta'
-              : (p||'').toUpperCase() === 'BAJA' ? 'tag-baja' : 'tag-media';
-    return `<span class="tag ${cls}">${p||'MEDIA'}</span>`;
+  function priorTag(nombre, prio) {
+    const p   = (prio || '').toUpperCase();
+    const cls = p === 'ALTA' ? 'tag-alta' : p === 'BAJA' ? 'tag-baja' : 'tag-media';
+    if (p === 'BAJA') return `<span class="tag ${cls}">BAJA</span>`;
+    return `<span class="tag ${cls} tag-click" onclick="togglePrioridad('${nombre}')">${p || 'MEDIA'}</span>`;
+  }
+
+  async function togglePrioridad(pedido) {
+    const idx = pedidosData.findIndex(p => p.pedido === pedido);
+    if (idx === -1) return;
+    const actual = (pedidosData[idx].prioridad || 'MEDIA').toUpperCase();
+    const nueva  = actual === 'ALTA' ? 'MEDIA' : 'ALTA';
+
+    pedidosData[idx].prioridad = nueva;
+    pedidosData.sort((a, b) => {
+      const r = x => x.prioridad === 'ALTA' ? 0 : x.prioridad === 'MEDIA' ? 1 : 2;
+      return r(a) - r(b);
+    });
+    renderPedidos(pedidosData);
+
+    try {
+      await fetch('/api/pedido/meta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pedido, prioridad: nueva }),
+      });
+    } catch(e) {
+      console.warn('No se pudo guardar prioridad:', e);
+    }
   }
 
   function mColor(m) {
@@ -261,14 +291,14 @@
       const gt      = p.ss_corre_total
         ? Math.min(Math.round(p.ss_corre / p.ss_corre_total * 100), 100) + '%' : '–';
       const gtColor = gt === '100%' ? '#34d399' : '#64748b';
-      const bg      = i % 2 === 0 ? '#1e293b' : '#162032';
+      const bg      = i % 2 === 0 ? '#1e3347' : '#18293e';
 
       return `<div class="tbl-row row-anim flex items-center px-3"
                    style="padding-top:7px; padding-bottom:7px; background:${bg};">
         <div class="c0 flex justify-center">${chk}</div>
         <div class="c1">
-          <span class="num font-black" style="font-size:14px; color:#1e293b; background:#fef3c7;
-                padding:3px 10px; border-radius:5px; letter-spacing:.04em; white-space:nowrap;">
+          <span class="num font-normal" style="font-size:17px; color:#f1f5f9;
+                letter-spacing:.04em; white-space:nowrap;">
             ${p.pedido}
           </span>
         </div>
@@ -277,7 +307,7 @@
           ${p.cliente || '–'}
         </div>
         <div class="c3" style="font-size:13px; color:#64748b; text-align:center;">${p.fecha_pedido||'–'}</div>
-        <div class="c4" style="text-align:center;">${priorTag(p.prioridad)}</div>
+        <div class="c4" style="text-align:center;">${priorTag(p.pedido, p.prioridad)}</div>
         <div class="c5" style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
           ${p.pickea||'–'}
         </div>
@@ -303,8 +333,7 @@
     body.innerHTML = motivos.map(m => `
       <div style="display:grid; grid-template-columns:100px 1fr 90px 130px 1fr 60px;
                   gap:8px; padding:5px 0; border-bottom:1px solid #1e293b; align-items:center;">
-        <span class="num font-black" style="font-size:12px; color:#1e293b; background:#fef3c7;
-                padding:2px 8px; border-radius:4px; white-space:nowrap;">${m.pedido}</span>
+        <span class="num font-black" style="font-size:12px; color:#f1f5f9; white-space:nowrap;">${m.pedido}</span>
         <span style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
               title="${m.cliente}">${m.cliente||'–'}</span>
         <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:4px; ${mColor(m.motivo)} text-align:center;">
@@ -323,7 +352,8 @@
       const res  = await fetch('/api/pedidos/estado');
       const data = await res.json();
 
-      renderPedidos(data.pedidos || []);
+      pedidosData = data.pedidos || [];
+      renderPedidos(pedidosData);
       renderMotivos(data.motivos  || []);
 
       document.getElementById('kpi-activas').textContent = data.stats?.ordenes_activas ?? '–';
