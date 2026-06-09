@@ -35,7 +35,7 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    return redirect(url_for('tv_panel'))
+    return redirect(url_for('reporte'))
 
 
 @app.route('/tv-panel')

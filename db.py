@@ -62,7 +62,7 @@ def init_panel_tables():
 def get_pedidos_estado():
     """
     Consolida pedidos de ambas bases de datos.
-    Fuente primaria: distriTest.sales_queue + order_state_tracking + panel_pedidos_meta
+    Fuente primaria: distriTest.order_state_tracking (current_state='sale') + sales_queue + panel_pedidos_meta
     Enriquecido con: ControlDistriV2Test.control_distri_history
     """
     pedidos = {}
@@ -73,9 +73,9 @@ def get_pedidos_estado():
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT
-                        sq.sale_order,
-                        sq.client_name,
-                        sq.pick_lines,
+                        ost.order_name                AS sale_order,
+                        COALESCE(sq.client_name, '') AS client_name,
+                        COALESCE(sq.pick_lines,  0)  AS pick_lines,
                         ost.current_state,
                         ost.last_checked,
                         pm.prioridad,
@@ -84,16 +84,18 @@ def get_pedidos_estado():
                         pm.confirmado,
                         pm.fecha_pedido,
                         pm.cod_cliente
-                    FROM sales_queue sq
-                    LEFT JOIN order_state_tracking ost ON ost.order_name = sq.sale_order
-                    LEFT JOIN panel_pedidos_meta pm    ON pm.pedido       = sq.sale_order
+                    FROM order_state_tracking ost
+                    LEFT JOIN sales_queue sq        ON sq.sale_order = ost.order_name
+                    LEFT JOIN panel_pedidos_meta pm ON pm.pedido     = ost.order_name
+                    WHERE ost.current_state = 'sale'
+                    -- AND ost.last_checked >= CURRENT_DATE - INTERVAL '7 days'
                     ORDER BY
                         CASE
                             WHEN pm.prioridad = 'ALTA'  THEN 1
                             WHEN pm.prioridad = 'MEDIA' THEN 2
                             ELSE 3
                         END,
-                        sq.sale_order
+                        ost.order_name DESC
                 """)
                 for row in cur.fetchall():
                     pedidos[row['sale_order']] = {
@@ -179,7 +181,10 @@ def get_pedidos_estado():
     except Exception as e:
         print(f"[panelDistri] Error leyendo ControlDistriV2Test: {e}")
 
-    return list(pedidos.values())
+    # Ordenar por número de pedido descendente (independiente del origen)
+    resultado = list(pedidos.values())
+    resultado.sort(key=lambda p: p['pedido'], reverse=True)
+    return resultado
 
 
 def get_stats_hoy():
@@ -194,7 +199,11 @@ def get_stats_hoy():
     try:
         with get_distri_conn() as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT COUNT(*) AS cnt FROM sales_queue")
+                cur.execute("""
+                    SELECT COUNT(*) AS cnt
+                    FROM order_state_tracking
+                    WHERE current_state = 'sale'
+                """)
                 row = cur.fetchone()
                 stats['total_cola'] = row['cnt'] if row else 0
 

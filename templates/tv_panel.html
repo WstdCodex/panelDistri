@@ -6,556 +6,345 @@
   <title>Panel Distri — TV</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Fuente TV-friendly */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-    * { font-family: 'Inter', sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800&display=swap');
 
-    body { background: #0b0e1a; color: #e2e8f0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Filas de tabla con efecto hover suave */
-    .tbl-row:hover { background: rgba(255,255,255,0.05); }
+    /* Toda la página ocupa exactamente la pantalla, sin scroll */
+    html, body { width: 100vw; height: 100vh; overflow: hidden; }
+    body { background: #060c1a; color: #e2e8f0; display: flex; flex-direction: column; }
 
-    /* Animación de parpadeo para en-control */
-    @keyframes blink-border {
-      0%, 100% { border-color: #f59e0b; }
-      50%       { border-color: transparent; }
+    /* Números y pedidos en fuente condensada */
+    .num { font-family: 'Barlow Condensed', sans-serif; }
+    .ui  { font-family: 'Inter', sans-serif; }
+
+    /* Parpadeo del indicador LIVE */
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.85); }
     }
-    .activo-blink { animation: blink-border 1.4s ease-in-out infinite; }
+    .pulse { animation: pulse-live 1.6s ease-in-out infinite; }
 
-    /* Barra de progreso */
-    .progress-bar { transition: width 0.6s ease; }
-
-    /* Toast de actualización */
-    #toast {
-      transition: opacity 0.4s ease;
+    /* Fade-in al actualizar filas */
+    @keyframes row-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
+    .row-anim { animation: row-in .3s ease; }
+
+    /* Barras de progreso */
+    .pbar-bg { background: #1e293b; border-radius: 4px; height: 8px; }
+    .pbar-fill { border-radius: 4px; height: 8px; transition: width .6s ease; }
+
+    /* Prioridades */
+    .tag-alta  { background:#b91c1c; color:#fff; }
+    .tag-media { background:#c2410c; color:#fff; }
+    .tag-baja  { background:#1d4ed8; color:#fff; }
+    .tag       { padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 800;
+                  letter-spacing: .08em; text-transform: uppercase; }
+
+    /* Líneas separadoras de la tabla */
+    .tbl-row { border-bottom: 1px solid #0f172a; }
+    .tbl-row:last-child { border-bottom: none; }
 
     /* Columnas fijas */
-    .col-check  { width: 3%;  }
-    .col-pedido { width: 9%;  }
-    .col-cli    { width: 20%; }
-    .col-fecha  { width: 7%;  }
-    .col-cod    { width: 7%;  }
-    .col-prior  { width: 8%;  }
-    .col-pick   { width: 10%; }
-    .col-corre  { width: 10%; }
-    .col-sspick { width: 9%;  }
-    .col-sscorre{ width: 9%;  }
-    .col-gt     { width: 8%;  }
+    .c0  { width:3%;  flex-shrink:0; }  /* check */
+    .c1  { width:9%;  flex-shrink:0; }  /* pedido */
+    .c2  { width:22%; flex-shrink:0; }  /* cliente */
+    .c3  { width:7%;  flex-shrink:0; text-align:center; } /* fecha */
+    .c4  { width:8%;  flex-shrink:0; text-align:center; } /* prioridad */
+    .c5  { width:11%; flex-shrink:0; } /* pickea */
+    .c6  { width:11%; flex-shrink:0; } /* corre */
+    .c7  { width:10%; flex-shrink:0; } /* ss.pick */
+    .c8  { width:11%; flex-shrink:0; } /* ss.corre */
+    .c9  { width:8%;  flex-shrink:0; text-align:center; } /* GT% */
+
+    /* Scroll invisible de la tabla de pedidos */
+    #tabla-scroll::-webkit-scrollbar { display: none; }
+    #tabla-scroll { scrollbar-width: none; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="ui">
 
-  <!-- ══════════════════════════════════════════════════════════════
-       HEADER
-  ═══════════════════════════════════════════════════════════════ -->
-  <header class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-b border-blue-800 px-6 py-3">
-    <div class="flex items-center justify-between">
-      <!-- Título -->
-      <div class="flex items-center gap-4">
-        <div class="text-2xl font-black tracking-widest text-blue-400 uppercase">Panel Distri</div>
-        <div class="h-6 w-px bg-blue-700"></div>
-        <div class="text-lg font-bold text-slate-200 uppercase tracking-wide">Pedidos Confirmados</div>
-      </div>
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER — siempre visible
+════════════════════════════════════════════════════════════ -->
+<header style="background:#0a1628; border-bottom: 2px solid #1e3a5f; flex-shrink:0;"
+        class="px-6 py-3 flex items-center justify-between">
 
-      <!-- Centro: fecha y hora en vivo -->
-      <div class="flex items-center gap-6">
-        <div class="text-center">
-          <div class="text-xs text-slate-400 uppercase tracking-widest">Fecha</div>
-          <div id="hdr-fecha" class="text-xl font-bold text-white">--/--</div>
-        </div>
-        <div class="text-center">
-          <div class="text-xs text-slate-400 uppercase tracking-widest">Hora</div>
-          <div id="hdr-hora" class="text-2xl font-black text-yellow-400 tabular-nums">--:--:--</div>
-        </div>
-      </div>
-
-      <!-- Derecha: estados de conexión -->
-      <div class="flex items-center gap-4 text-sm">
-        <div class="flex flex-col items-end gap-1">
-          <div class="flex items-center gap-2">
-            <span class="text-slate-400 text-xs">P. MENÚ (Conf. Clte)</span>
-            <div id="dot-pmenu" class="w-3 h-3 rounded-full bg-gray-600"></div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-slate-400 text-xs">CONF. WSTD</span>
-            <div id="dot-wstd" class="w-3 h-3 rounded-full bg-gray-600"></div>
-          </div>
-        </div>
-        <!-- Indicador de actualización -->
-        <div class="flex flex-col items-center">
-          <div id="pulse-dot" class="w-4 h-4 rounded-full bg-green-500"></div>
-          <span class="text-xs text-slate-500 mt-1">LIVE</span>
-        </div>
-      </div>
+  <!-- Título -->
+  <div class="flex items-center gap-5">
+    <div class="num font-black text-blue-400 uppercase tracking-widest" style="font-size:26px; letter-spacing:.12em;">
+      Panel Distri
     </div>
-  </header>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       TABLA DE PEDIDOS
-  ═══════════════════════════════════════════════════════════════ -->
-  <main class="flex-1 px-4 pt-3 pb-2 overflow-hidden">
-
-    <!-- Encabezado de columnas -->
-    <div class="flex text-xs font-bold text-slate-400 uppercase tracking-widest px-2 pb-1 border-b border-slate-700">
-      <div class="col-check"></div>
-      <div class="col-pedido">Pedido</div>
-      <div class="col-cli">Cliente</div>
-      <div class="col-fecha text-center">Fecha</div>
-      <div class="col-cod text-center">C.Clte</div>
-      <div class="col-prior text-center">Prior.</div>
-      <div class="col-pick">Pickea</div>
-      <div class="col-corre">Corre</div>
-      <div class="col-sspick text-center">SS.Pick</div>
-      <div class="col-sscorre text-center">SS.Corre</div>
-      <div class="col-gt text-center">GT.Est.</div>
+    <div style="width:2px; height:32px; background:#1e3a5f;"></div>
+    <div class="num font-bold text-slate-300 uppercase tracking-wide" style="font-size:18px;">
+      Pedidos Confirmados
     </div>
-
-    <!-- Filas dinámicas -->
-    <div id="tabla-pedidos" class="overflow-y-auto" style="max-height: 42vh;">
-      <!-- Cargando... -->
-      <div class="flex items-center justify-center h-24 text-slate-500 text-sm">
-        Cargando datos…
-      </div>
-    </div>
-  </main>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       INFORME / ESTADÍSTICAS + MOTIVOS
-  ═══════════════════════════════════════════════════════════════ -->
-  <section class="px-4 pb-3 grid grid-cols-2 gap-4" style="max-height: 38vh;">
-
-    <!-- Columna izquierda: Informe -->
-    <div class="bg-slate-800 rounded-xl border border-slate-700 p-4">
-      <div class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-2">
-        <span class="text-blue-400">▐</span> Informe del día
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="bg-slate-900 rounded-lg p-3 text-center">
-          <div class="text-3xl font-black text-blue-400" id="stat-activas">–</div>
-          <div class="text-xs text-slate-400 mt-1 uppercase">Órdenes Activas</div>
-        </div>
-        <div class="bg-slate-900 rounded-lg p-3 text-center">
-          <div class="text-3xl font-black text-green-400" id="stat-fin">–</div>
-          <div class="text-xs text-slate-400 mt-1 uppercase">Finalizadas hoy</div>
-        </div>
-        <div class="bg-slate-900 rounded-lg p-3 text-center">
-          <div class="text-3xl font-black text-yellow-400" id="stat-ctrl">–</div>
-          <div class="text-xs text-slate-400 mt-1 uppercase">En Control</div>
-        </div>
-        <div class="bg-slate-900 rounded-lg p-3 text-center">
-          <div class="text-3xl font-black text-slate-300" id="stat-cola">–</div>
-          <div class="text-xs text-slate-400 mt-1 uppercase">Total en Cola</div>
-        </div>
-      </div>
-
-      <!-- Botones de filtro (visuales, no funcionales en la TV) -->
-      <div class="flex gap-2">
-        <button onclick="filtrarPrioridad('O.DEP')"
-          class="flex-1 py-2 rounded-lg text-xs font-bold bg-orange-700 hover:bg-orange-600 text-white transition">
-          O.DEP
-        </button>
-        <button onclick="filtrarPrioridad('F.ALT')"
-          class="flex-1 py-2 rounded-lg text-xs font-bold bg-red-700 hover:bg-red-600 text-white transition">
-          F.ALT
-        </button>
-        <button onclick="filtrarPrioridad('')"
-          class="flex-1 py-2 rounded-lg text-xs font-bold bg-slate-600 hover:bg-slate-500 text-white transition">
-          Todos
-        </button>
-      </div>
-    </div>
-
-    <!-- Columna derecha: Motivos de órdenes incompletas -->
-    <div class="bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col">
-      <div class="text-sm font-bold text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-2">
-        <span class="text-red-400">▐</span> Motivos de Órdenes Incompletas
-      </div>
-
-      <!-- Encabezado tabla motivos -->
-      <div class="grid text-xs font-bold text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-600 mb-1"
-           style="grid-template-columns: 90px 1fr 90px 1fr 1fr 1fr">
-        <span>Pedido</span>
-        <span>Cliente</span>
-        <span>Motivo</span>
-        <span>Submotivo</span>
-        <span>Observaciones</span>
-        <span class="text-center">Hora</span>
-      </div>
-
-      <!-- Filas dinámicas motivos -->
-      <div id="tabla-motivos" class="overflow-y-auto flex-1 text-sm">
-        <div class="text-slate-500 text-xs py-2">Sin motivos registrados hoy.</div>
-      </div>
-
-      <!-- Botón para abrir modal de registro -->
-      <button onclick="abrirModalMotivo()"
-        class="mt-3 w-full py-2 rounded-lg text-xs font-bold bg-blue-700 hover:bg-blue-600 text-white transition">
-        + Registrar Motivo
-      </button>
-    </div>
-
-  </section>
-
-  <!-- Toast de última actualización -->
-  <div id="toast"
-    class="fixed bottom-4 right-4 bg-slate-700 text-slate-300 text-xs px-4 py-2 rounded-full opacity-0 pointer-events-none">
-    Actualizado: <span id="toast-time">–</span>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       MODAL: Registrar motivo de orden incompleta
-  ═══════════════════════════════════════════════════════════════ -->
-  <div id="modal-motivo"
-    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-    <div class="bg-slate-800 rounded-2xl border border-slate-600 p-6 w-full max-w-md shadow-2xl">
-      <h2 class="text-lg font-bold text-white mb-4">Registrar Motivo de Orden Incompleta</h2>
-
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 uppercase">Pedido *</label>
-          <input id="m-pedido" type="text" placeholder="Ej: S42834"
-            class="w-full mt-1 bg-slate-700 border border-slate-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 uppercase">Cliente</label>
-          <input id="m-cliente" type="text" placeholder="Nombre / código cliente"
-            class="w-full mt-1 bg-slate-700 border border-slate-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 uppercase">Motivo *</label>
-          <div class="grid grid-cols-2 gap-2 mt-1">
-            <button data-motivo="O.DEP." onclick="selMotivo(this)"
-              class="motivo-btn py-2 rounded-lg text-xs font-bold border border-slate-500 text-slate-300 hover:bg-orange-700 hover:border-orange-700 hover:text-white transition">
-              O.DEP. (Faltante depósito)
-            </button>
-            <button data-motivo="F.ALT" onclick="selMotivo(this)"
-              class="motivo-btn py-2 rounded-lg text-xs font-bold border border-slate-500 text-slate-300 hover:bg-red-700 hover:border-red-700 hover:text-white transition">
-              F.ALT (Faltante alternativo)
-            </button>
-            <button data-motivo="W-DIF" onclick="selMotivo(this)"
-              class="motivo-btn py-2 rounded-lg text-xs font-bold border border-slate-500 text-slate-300 hover:bg-yellow-700 hover:border-yellow-700 hover:text-white transition">
-              W-DIF (Dif. de peso)
-            </button>
-            <button data-motivo="O.MOT." onclick="selMotivo(this)"
-              class="motivo-btn py-2 rounded-lg text-xs font-bold border border-slate-500 text-slate-300 hover:bg-slate-600 hover:border-slate-400 hover:text-white transition">
-              O.MOT. (Otro motivo)
-            </button>
-          </div>
-          <input id="m-motivo-val" type="hidden" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 uppercase">Submotivo</label>
-          <select id="m-submotivo"
-            class="w-full mt-1 bg-slate-700 border border-slate-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
-            <option value="">-- Seleccionar --</option>
-            <option value="OTRO DSP.">OTRO DSP.</option>
-            <option value="EN PROCESO AUDIT.">EN PROCESO AUDIT.</option>
-            <option value="OTROS MOTIVOS">OTROS MOTIVOS</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 uppercase">Observaciones</label>
-          <textarea id="m-obs" rows="2" placeholder="Detalles adicionales…"
-            class="w-full mt-1 bg-slate-700 border border-slate-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 resize-none"></textarea>
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 uppercase">Registrado por</label>
-          <input id="m-reg-por" type="text" placeholder="Tu nombre"
-            class="w-full mt-1 bg-slate-700 border border-slate-500 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-        </div>
-      </div>
-
-      <div id="m-error" class="hidden mt-3 text-red-400 text-xs"></div>
-
-      <div class="flex gap-3 mt-5">
-        <button onclick="cerrarModalMotivo()"
-          class="flex-1 py-2 rounded-lg text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 transition">
-          Cancelar
-        </button>
-        <button onclick="guardarMotivo()"
-          class="flex-1 py-2 rounded-lg text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition">
-          Guardar
-        </button>
+  <!-- Centro: fecha y hora -->
+  <div class="flex items-center gap-8">
+    <div class="text-center">
+      <div class="text-xs text-slate-500 uppercase tracking-widest">Fecha</div>
+      <div id="hdr-fecha" class="num font-black text-white" style="font-size:22px; letter-spacing:.05em;">--/--</div>
+    </div>
+    <div class="text-center">
+      <div class="text-xs text-slate-500 uppercase tracking-widest">Hora</div>
+      <div id="hdr-hora" class="num font-black text-yellow-400" style="font-size:28px; letter-spacing:.08em; min-width:110px;">
+        --:--:--
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       JAVASCRIPT
-  ═══════════════════════════════════════════════════════════════ -->
-  <script>
-    let filtroActivo = '';
-    let ultimosDatos = null;
+  <!-- Derecha: estado conexión -->
+  <div class="flex items-center gap-6">
+    <div class="flex flex-col gap-1.5 text-right">
+      <div class="flex items-center justify-end gap-2">
+        <span class="text-slate-500 text-xs uppercase tracking-widest">P. Menú (Conf. Clte)</span>
+        <div id="dot-pmenu" class="w-3 h-3 rounded-full bg-slate-700"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2">
+        <span class="text-slate-500 text-xs uppercase tracking-widest">Conf. WSTD</span>
+        <div id="dot-wstd" class="w-3 h-3 rounded-full bg-slate-700"></div>
+      </div>
+    </div>
+    <div class="flex flex-col items-center gap-1">
+      <div id="live-dot" class="w-4 h-4 rounded-full bg-slate-700 pulse"></div>
+      <span class="text-xs text-slate-600 uppercase tracking-wider">live</span>
+    </div>
+    <a href="/reporte"
+       style="background:#1e293b; border:1px solid #334155;"
+       class="text-slate-400 hover:text-slate-200 text-xs px-3 py-1.5 rounded-lg transition">
+      ⚙ Gestión
+    </a>
+  </div>
+</header>
 
-    // ── Reloj en tiempo real ─────────────────────────────────────
-    function actualizarReloj() {
-      const ahora = new Date();
-      document.getElementById('hdr-hora').textContent =
-        ahora.toLocaleTimeString('es-AR', { hour12: false });
-      document.getElementById('hdr-fecha').textContent =
-        ahora.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-    }
-    setInterval(actualizarReloj, 1000);
-    actualizarReloj();
+<!-- ═══════════════════════════════════════════════════════════
+     TABLA DE PEDIDOS
+════════════════════════════════════════════════════════════ -->
+<section style="flex: 1 1 0; min-height:0; display:flex; flex-direction:column; padding: 0 16px; margin-top:8px;">
 
-    // ── Helpers visuales ─────────────────────────────────────────
-    function priorColor(p) {
-      if (!p) return 'bg-slate-700 text-slate-300';
-      switch (p.toUpperCase()) {
-        case 'ALTA':  return 'bg-red-700 text-white';
-        case 'MEDIA': return 'bg-orange-600 text-white';
-        case 'BAJA':  return 'bg-blue-700 text-white';
-        default:      return 'bg-slate-700 text-slate-300';
-      }
-    }
+  <!-- Encabezados de columna -->
+  <div class="flex items-center px-3 pb-2"
+       style="border-bottom: 1px solid #1e293b; flex-shrink:0;">
+    <div class="c0"></div>
+    <div class="c1 text-xs font-bold text-slate-500 uppercase tracking-widest">Pedido</div>
+    <div class="c2 text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente</div>
+    <div class="c3 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha</div>
+    <div class="c4 text-xs font-bold text-slate-500 uppercase tracking-widest">Prior.</div>
+    <div class="c5 text-xs font-bold text-slate-500 uppercase tracking-widest">Pickea</div>
+    <div class="c6 text-xs font-bold text-slate-500 uppercase tracking-widest">Corre</div>
+    <div class="c7 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">SS.Pick</div>
+    <div class="c8 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">SS.Corre</div>
+    <div class="c9 text-xs font-bold text-slate-500 uppercase tracking-widest">GT%</div>
+  </div>
 
-    function estadoColor(e) {
-      if (!e) return 'text-slate-400';
-      const estado = e.toLowerCase();
-      if (estado.includes('done') || estado.includes('hecho') || estado.includes('complet'))
-        return 'text-green-400';
-      if (estado.includes('assign') || estado.includes('preparado'))
-        return 'text-blue-300';
-      if (estado.includes('cancel'))
-        return 'text-red-400';
-      return 'text-slate-300';
-    }
+  <!-- Filas (scroll automático, sin barra visible) -->
+  <div id="tabla-scroll" style="overflow-y:auto; flex:1 1 0;">
+    <div id="tabla-body">
+      <div class="text-slate-600 text-sm py-6 text-center">Cargando…</div>
+    </div>
+  </div>
+</section>
 
-    function progresoBarra(actual, total) {
-      if (!total || total === 0) return '';
-      const pct = Math.min(Math.round((actual / total) * 100), 100);
-      const color = pct >= 100 ? 'bg-green-500' : pct >= 60 ? 'bg-blue-500' : 'bg-yellow-500';
-      return `
-        <div class="w-full bg-slate-700 rounded-full h-1.5 mt-1">
-          <div class="progress-bar ${color} h-1.5 rounded-full" style="width:${pct}%"></div>
-        </div>
-        <div class="text-center text-xs tabular-nums">${actual}/${total}</div>`;
-    }
+<!-- ═══════════════════════════════════════════════════════════
+     FILA INFERIOR: INFORME + MOTIVOS
+════════════════════════════════════════════════════════════ -->
+<footer style="flex-shrink:0; height:220px; border-top:2px solid #1e3a5f;
+               display:grid; grid-template-columns:340px 1fr; gap:0; background:#060c1a;">
 
-    // ── Render tabla pedidos ──────────────────────────────────────
-    function renderPedidos(pedidos) {
-      const cont = document.getElementById('tabla-pedidos');
-      const lista = filtroActivo
-        ? pedidos.filter(p => {
-            const m = ultimosDatos && ultimosDatos.motivos
-              ? ultimosDatos.motivos.filter(m => m.pedido === p.pedido && m.motivo === filtroActivo)
-              : [];
-            return m.length > 0;
-          })
-        : pedidos;
+  <!-- Bloque INFORME -->
+  <div style="border-right:2px solid #1e3a5f; padding:14px 20px; display:flex; flex-direction:column; gap:10px;">
+    <div class="num font-black text-slate-400 uppercase tracking-widest" style="font-size:11px;">
+      ▐ Informe del día
+    </div>
 
-      if (!lista.length) {
-        cont.innerHTML = '<div class="text-slate-500 text-sm py-4 text-center">Sin pedidos en cola.</div>';
-        return;
-      }
+    <!-- KPIs en 2×2 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; flex:1;">
+      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-activas" class="num font-black text-blue-400" style="font-size:36px; line-height:1;">–</div>
+        <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">Órdenes activas</div>
+      </div>
+      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-fin" class="num font-black text-green-400" style="font-size:36px; line-height:1;">–</div>
+        <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">Finalizadas hoy</div>
+      </div>
+      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-ctrl" class="num font-black text-yellow-400" style="font-size:36px; line-height:1;">–</div>
+        <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">En control</div>
+      </div>
+      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-cola" class="num font-black text-slate-300" style="font-size:36px; line-height:1;">–</div>
+        <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">Total en cola</div>
+      </div>
+    </div>
+  </div>
 
-      cont.innerHTML = lista.map(p => {
-        const chk = p.confirmado
-          ? '<span class="text-green-400 text-lg">✓</span>'
-          : '<span class="text-slate-600 text-lg">□</span>';
+  <!-- Bloque MOTIVOS -->
+  <div style="padding:14px 16px; display:flex; flex-direction:column; gap:8px; overflow:hidden;">
+    <div class="num font-black text-slate-400 uppercase tracking-widest" style="font-size:11px;">
+      ▐ Motivos de Órdenes Incompletas
+    </div>
 
-        const ssPickTotal = p.ss_pick_total || p.pick_lines || 0;
-        const ssCorre     = progresoBarra(p.ss_corre, p.ss_corre_total);
-        const ssPick      = ssPickTotal ? `<div class="text-center text-xs text-slate-400">${p.ss_pick}/${ssPickTotal}</div>` : '–';
+    <!-- Encabezado tabla motivos -->
+    <div style="display:grid; grid-template-columns:100px 1fr 90px 130px 1fr 60px;
+                gap:8px; border-bottom:1px solid #1e293b; padding-bottom:6px;">
+      <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Pedido</span>
+      <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Cliente</span>
+      <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Motivo</span>
+      <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Submotivo</span>
+      <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Observaciones</span>
+      <span class="text-xs text-slate-500 uppercase font-bold tracking-wider text-center">Hora</span>
+    </div>
 
-        const gtTotal = p.ss_corre_total || 0;
-        const gtActual = p.ss_corre || 0;
-        const gtPct = gtTotal ? Math.round((gtActual / gtTotal) * 100) : 0;
-        const gtColor = gtPct >= 100 ? 'text-green-400 font-bold' : 'text-slate-300';
+    <!-- Filas motivos -->
+    <div id="motivos-body" style="overflow-y:auto; flex:1;">
+      <div class="text-slate-600 text-xs py-2">Sin motivos registrados hoy.</div>
+    </div>
+  </div>
+</footer>
 
-        return `
-          <div class="tbl-row flex items-center px-2 py-2 border-b border-slate-800 text-sm"
-               data-pedido="${p.pedido}">
-            <div class="col-check flex justify-center">${chk}</div>
-            <div class="col-pedido font-bold text-yellow-300">${p.pedido}</div>
-            <div class="col-cli text-slate-200 truncate" title="${p.cliente}">${p.cliente || '–'}</div>
-            <div class="col-fecha text-center text-slate-400">${p.fecha_pedido || '–'}</div>
-            <div class="col-cod text-center text-slate-400 text-xs">${p.cod_cliente || '–'}</div>
-            <div class="col-prior flex justify-center">
-              <span class="px-2 py-0.5 rounded text-xs font-bold ${priorColor(p.prioridad)}">
-                ${p.prioridad || '–'}
-              </span>
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+  // ── Reloj ──────────────────────────────────────────────────
+  (function reloj() {
+    const now = new Date();
+    const p = n => String(n).padStart(2,'0');
+    document.getElementById('hdr-hora').textContent =
+      `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+    document.getElementById('hdr-fecha').textContent =
+      `${p(now.getDate())}/${p(now.getMonth()+1)}`;
+    setTimeout(reloj, 1000);
+  })();
+
+  // ── Helpers ───────────────────────────────────────────────
+  function progBar(actual, total) {
+    if (!total) return '<span class="text-slate-600" style="font-size:12px;">–</span>';
+    const pct   = Math.min(Math.round(actual/total*100), 100);
+    const color = pct >= 100 ? '#22c55e' : pct >= 60 ? '#3b82f6' : '#eab308';
+    return `<div class="pbar-bg w-full" style="margin-bottom:3px;">
+              <div class="pbar-fill" style="width:${pct}%; background:${color};"></div>
             </div>
-            <div class="col-pick text-slate-300 text-xs truncate">${p.pickea || '–'}</div>
-            <div class="col-corre text-slate-300 text-xs truncate">${p.corre || p.control_user || '–'}</div>
-            <div class="col-sspick">${ssPick}</div>
-            <div class="col-sscorre">${ssCorre}</div>
-            <div class="col-gt text-center ${gtColor}">${gtPct ? gtPct + '%' : '–'}</div>
-          </div>`;
-      }).join('');
+            <div style="font-size:11px; text-align:center; color:#94a3b8;">${actual}/${total}</div>`;
+  }
+
+  function priorTag(p) {
+    const cls = (p||'').toUpperCase() === 'ALTA' ? 'tag-alta'
+              : (p||'').toUpperCase() === 'BAJA' ? 'tag-baja' : 'tag-media';
+    return `<span class="tag ${cls}">${p||'MEDIA'}</span>`;
+  }
+
+  function mColor(m) {
+    return m === 'O.DEP.' ? 'background:#7c2d12;color:#fed7aa;'
+         : m === 'F.ALT'  ? 'background:#7f1d1d;color:#fecaca;'
+         : m === 'W-DIF'  ? 'background:#713f12;color:#fef08a;'
+         :                   'background:#1e293b;color:#94a3b8;';
+  }
+
+  // ── Render pedidos ─────────────────────────────────────────
+  function renderPedidos(pedidos) {
+    const body = document.getElementById('tabla-body');
+    if (!pedidos.length) {
+      body.innerHTML = '<div class="text-slate-600 text-sm py-6 text-center">Sin pedidos en cola.</div>';
+      return;
     }
 
-    // ── Render tabla motivos ──────────────────────────────────────
-    function motivoColor(m) {
-      switch ((m || '').toUpperCase()) {
-        case 'O.DEP.': return 'bg-orange-700 text-white';
-        case 'F.ALT':  return 'bg-red-700 text-white';
-        case 'W-DIF':  return 'bg-yellow-700 text-white';
-        default:       return 'bg-slate-600 text-slate-200';
-      }
+    body.innerHTML = pedidos.map((p, i) => {
+      const chk     = p.confirmado
+        ? '<span style="color:#22c55e; font-size:18px;">✓</span>'
+        : '<span style="color:#1e293b; font-size:18px;">○</span>';
+      const pickTotal = p.ss_pick_total || p.pick_lines || 0;
+      const gt      = p.ss_corre_total
+        ? Math.min(Math.round(p.ss_corre / p.ss_corre_total * 100), 100) + '%' : '–';
+      const gtColor = gt === '100%' ? '#22c55e' : '#64748b';
+      const bg      = i % 2 === 0 ? '#080e1e' : '#060c1a';
+
+      return `<div class="tbl-row row-anim flex items-center px-3"
+                   style="padding-top:7px; padding-bottom:7px; background:${bg};">
+        <div class="c0 flex justify-center">${chk}</div>
+        <div class="c1">
+          <span class="num font-black" style="font-size:14px; color:#0a1628; background:#fde68a;
+                padding:3px 10px; border-radius:5px; letter-spacing:.04em; white-space:nowrap;">
+            ${p.pedido}
+          </span>
+        </div>
+        <div class="c2" style="font-size:13px; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+             title="${p.cliente}">
+          ${p.cliente || '–'}
+        </div>
+        <div class="c3" style="font-size:13px; color:#64748b; text-align:center;">${p.fecha_pedido||'–'}</div>
+        <div class="c4" style="text-align:center;">${priorTag(p.prioridad)}</div>
+        <div class="c5" style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${p.pickea||'–'}
+        </div>
+        <div class="c6" style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${p.corre||p.control_user||'–'}
+        </div>
+        <div class="c7">${progBar(p.ss_pick, pickTotal)}</div>
+        <div class="c8">${progBar(p.ss_corre, p.ss_corre_total)}</div>
+        <div class="c9 num font-black" style="font-size:20px; color:${gtColor}; text-align:center;">
+          ${gt}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Render motivos ─────────────────────────────────────────
+  function renderMotivos(motivos) {
+    const body = document.getElementById('motivos-body');
+    if (!motivos.length) {
+      body.innerHTML = '<div class="text-slate-600 text-xs py-2">Sin motivos registrados hoy.</div>';
+      return;
     }
+    body.innerHTML = motivos.map(m => `
+      <div style="display:grid; grid-template-columns:100px 1fr 90px 130px 1fr 60px;
+                  gap:8px; padding:5px 0; border-bottom:1px solid #0f172a; align-items:center;">
+        <span class="num font-black" style="font-size:12px; color:#0a1628; background:#fde68a;
+                padding:2px 8px; border-radius:4px; white-space:nowrap;">${m.pedido}</span>
+        <span style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+              title="${m.cliente}">${m.cliente||'–'}</span>
+        <span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:4px; ${mColor(m.motivo)} text-align:center;">
+          ${m.motivo}
+        </span>
+        <span style="font-size:11px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.submotivo||'–'}</span>
+        <span style="font-size:11px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+              title="${m.observaciones}">${m.observaciones||'–'}</span>
+        <span style="font-size:11px; color:#475569; text-align:center;">${m.hora}</span>
+      </div>`).join('');
+  }
 
-    function renderMotivos(motivos) {
-      const cont = document.getElementById('tabla-motivos');
-      if (!motivos || !motivos.length) {
-        cont.innerHTML = '<div class="text-slate-500 text-xs py-2">Sin motivos registrados hoy.</div>';
-        return;
-      }
-      cont.innerHTML = motivos.map(m => `
-        <div class="grid items-center py-1 border-b border-slate-700 text-xs gap-1"
-             style="grid-template-columns: 90px 1fr 90px 1fr 1fr 60px 28px">
-          <span class="font-bold text-yellow-300">${m.pedido}</span>
-          <span class="text-slate-300 truncate" title="${m.cliente}">${m.cliente || '–'}</span>
-          <span class="px-1.5 py-0.5 rounded text-center font-bold text-xs ${motivoColor(m.motivo)}">${m.motivo}</span>
-          <span class="text-slate-400 truncate">${m.submotivo || '–'}</span>
-          <span class="text-slate-400 truncate" title="${m.observaciones}">${m.observaciones || '–'}</span>
-          <span class="text-slate-500 text-center">${m.hora}</span>
-          <button onclick="borrarMotivo(${m.id})"
-            class="text-red-500 hover:text-red-300 transition text-center leading-none" title="Eliminar">✕</button>
-        </div>`
-      ).join('');
+  // ── Polling cada 10 segundos ───────────────────────────────
+  async function fetchEstado() {
+    try {
+      const res  = await fetch('/api/pedidos/estado');
+      const data = await res.json();
+
+      renderPedidos(data.pedidos || []);
+      renderMotivos(data.motivos  || []);
+
+      document.getElementById('kpi-activas').textContent = data.stats?.ordenes_activas ?? '–';
+      document.getElementById('kpi-fin').textContent     = data.stats?.finalizadas_hoy ?? '–';
+      document.getElementById('kpi-ctrl').textContent    = data.stats?.en_control ?? '–';
+      document.getElementById('kpi-cola').textContent    = data.stats?.total_cola ?? '–';
+
+      // Dots verdes = OK
+      ['dot-pmenu','dot-wstd'].forEach(id =>
+        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-green-500');
+      document.getElementById('live-dot').style.background = '#22c55e';
+
+    } catch(e) {
+      ['dot-pmenu','dot-wstd'].forEach(id =>
+        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-red-600');
+      document.getElementById('live-dot').style.background = '#dc2626';
     }
+  }
 
-    // ── Render stats ──────────────────────────────────────────────
-    function renderStats(stats) {
-      document.getElementById('stat-activas').textContent = stats.ordenes_activas ?? '–';
-      document.getElementById('stat-fin').textContent     = stats.finalizadas_hoy ?? '–';
-      document.getElementById('stat-ctrl').textContent    = stats.en_control ?? '–';
-      document.getElementById('stat-cola').textContent    = stats.total_cola ?? '–';
-    }
-
-    // ── Fetch y polling cada 10 segundos ─────────────────────────
-    let pulsing = false;
-    async function fetchEstado() {
-      try {
-        const res  = await fetch('/api/pedidos/estado');
-        const data = await res.json();
-        ultimosDatos = data;
-
-        renderPedidos(data.pedidos || []);
-        renderStats(data.stats    || {});
-        renderMotivos(data.motivos || []);
-
-        // Dots de conexión (verdes si hay datos)
-        ['dot-pmenu', 'dot-wstd'].forEach(id => {
-          const el = document.getElementById(id);
-          el.className = 'w-3 h-3 rounded-full bg-green-500';
-        });
-
-        // Toast
-        showToast(data.timestamp || '–');
-
-        // Parpadeo del punto LIVE
-        const dot = document.getElementById('pulse-dot');
-        dot.className = 'w-4 h-4 rounded-full bg-yellow-400';
-        setTimeout(() => dot.className = 'w-4 h-4 rounded-full bg-green-500', 500);
-
-      } catch (err) {
-        console.error('Error al obtener estado:', err);
-        ['dot-pmenu', 'dot-wstd'].forEach(id => {
-          document.getElementById(id).className = 'w-3 h-3 rounded-full bg-red-500';
-        });
-        document.getElementById('pulse-dot').className = 'w-4 h-4 rounded-full bg-red-500';
-      }
-    }
-
-    fetchEstado();
-    setInterval(fetchEstado, 10000);
-
-    // ── Toast ─────────────────────────────────────────────────────
-    let toastTimer = null;
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      document.getElementById('toast-time').textContent = msg;
-      t.style.opacity = '1';
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.style.opacity = '0', 2500);
-    }
-
-    // ── Filtro por motivo ─────────────────────────────────────────
-    function filtrarPrioridad(motivo) {
-      filtroActivo = motivo;
-      if (ultimosDatos) renderPedidos(ultimosDatos.pedidos || []);
-    }
-
-    // ── Modal motivo ──────────────────────────────────────────────
-    function abrirModalMotivo() {
-      document.getElementById('modal-motivo').classList.remove('hidden');
-    }
-    function cerrarModalMotivo() {
-      document.getElementById('modal-motivo').classList.add('hidden');
-      // Limpiar
-      ['m-pedido','m-cliente','m-obs','m-reg-por'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('m-motivo-val').value = '';
-      document.getElementById('m-submotivo').value = '';
-      document.querySelectorAll('.motivo-btn').forEach(b => b.classList.remove('ring-2','ring-white'));
-      document.getElementById('m-error').classList.add('hidden');
-    }
-
-    function selMotivo(btn) {
-      document.querySelectorAll('.motivo-btn').forEach(b => {
-        b.classList.remove('ring-2','ring-white','bg-orange-700','border-orange-700',
-          'bg-red-700','border-red-700','bg-yellow-700','border-yellow-700',
-          'bg-slate-600','border-slate-400','text-white');
-        b.classList.add('border-slate-500','text-slate-300');
-      });
-      btn.classList.add('ring-2','ring-white','text-white');
-      document.getElementById('m-motivo-val').value = btn.dataset.motivo;
-    }
-
-    async function guardarMotivo() {
-      const pedido = document.getElementById('m-pedido').value.trim();
-      const motivo = document.getElementById('m-motivo-val').value.trim();
-      const errDiv = document.getElementById('m-error');
-
-      if (!pedido || !motivo) {
-        errDiv.textContent = 'El pedido y el motivo son obligatorios.';
-        errDiv.classList.remove('hidden');
-        return;
-      }
-      errDiv.classList.add('hidden');
-
-      try {
-        const res = await fetch('/api/motivo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pedido,
-            motivo,
-            cliente:       document.getElementById('m-cliente').value.trim(),
-            submotivo:     document.getElementById('m-submotivo').value,
-            observaciones: document.getElementById('m-obs').value.trim(),
-            registrado_por: document.getElementById('m-reg-por').value.trim(),
-          }),
-        });
-        const data = await res.json();
-        if (data.ok) {
-          cerrarModalMotivo();
-          fetchEstado(); // refrescar de inmediato
-        } else {
-          errDiv.textContent = data.error || 'Error desconocido.';
-          errDiv.classList.remove('hidden');
-        }
-      } catch (e) {
-        errDiv.textContent = 'Error de red: ' + e.message;
-        errDiv.classList.remove('hidden');
-      }
-    }
-
-    async function borrarMotivo(id) {
-      if (!confirm('¿Eliminar este motivo?')) return;
-      try {
-        await fetch(`/api/motivo/${id}/borrar`, { method: 'POST' });
-        fetchEstado();
-      } catch(e) { console.error(e); }
-    }
-
-    // Cerrar modal con Escape
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') cerrarModalMotivo();
-    });
-  </script>
+  fetchEstado();
+  setInterval(fetchEstado, 10000);
+</script>
 </body>
 </html>
