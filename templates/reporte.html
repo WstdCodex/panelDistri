@@ -13,7 +13,7 @@
     .tbl-container { max-height: 420px; overflow-y: auto; }
     .tbl-container thead th {
       position: sticky; top: 0; z-index: 10;
-      background: #1e293b;
+      background: #162032;
     }
 
     /* Scrollbar suave */
@@ -27,9 +27,9 @@
 
     /* Badge prioridad */
     .badge { display:inline-block; padding:2px 10px; border-radius:9999px; font-size:11px; font-weight:700; letter-spacing:.05em; }
-    .badge-alta  { background:#dc2626; color:#fff; }
-    .badge-media { background:#ea580c; color:#fff; }
-    .badge-baja  { background:#2563eb; color:#fff; }
+    .badge-alta  { background:#b45309; color:#fff; }
+    .badge-media { background:#6d28d9; color:#fff; }
+    .badge-baja  { background:#0369a1; color:#fff; }
 
     /* Progress mini */
     .prog-bar { height:6px; border-radius:3px; background:#334155; }
@@ -37,7 +37,7 @@
 
     input[type=date], input[type=text], select, textarea {
       background: #1e293b;
-      border: 1px solid #334155;
+      border: 1px solid #475569;
       color: #e2e8f0;
       border-radius: 8px;
       padding: 8px 12px;
@@ -46,7 +46,7 @@
       transition: border-color .2s;
       width: 100%;
     }
-    input:focus, select:focus, textarea:focus { border-color: #3b82f6; }
+    input:focus, select:focus, textarea:focus { border-color: #818cf8; }
 
     .motivo-tag { cursor:pointer; padding:4px 12px; border-radius:6px; font-size:12px; font-weight:700;
                   border:2px solid transparent; transition:all .15s; }
@@ -54,14 +54,14 @@
     .motivo-tag.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.25); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen">
+<body class="bg-slate-900 text-slate-200 min-h-screen">
 
 <!-- ═══════════════════════════════════════════════════════
      NAVBAR
 ═══════════════════════════════════════════════════════ -->
-<nav class="bg-slate-900 border-b border-slate-700 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+<nav class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
   <div class="flex items-center gap-3">
-    <span class="text-xl font-extrabold text-blue-400 tracking-wide">Panel Distri</span>
+    <span class="text-xl font-extrabold text-indigo-400 tracking-wide">Panel Distri</span>
     <span class="text-slate-600">|</span>
     <span class="text-slate-300 font-medium">Gestión de Pedidos</span>
   </div>
@@ -82,15 +82,15 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="bg-slate-800 rounded-xl border border-slate-700 p-5">
       <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">Órdenes activas</div>
-      <div id="kpi-activas" class="text-4xl font-black text-blue-400">–</div>
+      <div id="kpi-activas" class="text-4xl font-black text-indigo-400">–</div>
     </div>
     <div class="bg-slate-800 rounded-xl border border-slate-700 p-5">
       <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">Finalizadas hoy</div>
-      <div id="kpi-fin" class="text-4xl font-black text-green-400">–</div>
+      <div id="kpi-fin" class="text-4xl font-black text-emerald-400">–</div>
     </div>
     <div class="bg-slate-800 rounded-xl border border-slate-700 p-5">
       <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">En control ahora</div>
-      <div id="kpi-ctrl" class="text-4xl font-black text-yellow-400">–</div>
+      <div id="kpi-ctrl" class="text-4xl font-black text-amber-400">–</div>
     </div>
     <div class="bg-slate-800 rounded-xl border border-slate-700 p-5">
       <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">Total en cola</div>
@@ -128,7 +128,7 @@
         <div class="flex items-center gap-2">
           <input id="fecha-excel" type="date" class="!w-36 !py-1.5 text-sm" />
           <button onclick="descargarExcel()"
-            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-1.5 rounded-lg transition font-semibold whitespace-nowrap">
+            class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-1.5 rounded-lg transition font-semibold whitespace-nowrap">
             ⬇ Descargar Excel
           </button>
         </div>
@@ -216,9 +216,9 @@
         <div>
           <label class="text-xs text-slate-400 uppercase tracking-wider block mb-2">Motivo *</label>
           <div class="flex flex-wrap gap-2">
-            <button class="motivo-tag bg-orange-700 text-white" data-val="O.DEP." onclick="selMotivo(this)">O.DEP.</button>
-            <button class="motivo-tag bg-red-700 text-white"    data-val="F.ALT"  onclick="selMotivo(this)">F.ALT</button>
-            <button class="motivo-tag bg-yellow-700 text-white" data-val="W-DIF"  onclick="selMotivo(this)">W-DIF</button>
+            <button class="motivo-tag bg-amber-800 text-white"  data-val="O.DEP." onclick="selMotivo(this)">O.DEP.</button>
+            <button class="motivo-tag bg-red-900 text-white"    data-val="F.ALT"  onclick="selMotivo(this)">F.ALT</button>
+            <button class="motivo-tag bg-stone-700 text-white"  data-val="W-DIF"  onclick="selMotivo(this)">W-DIF</button>
             <button class="motivo-tag bg-slate-600 text-white"  data-val="O.MOT." onclick="selMotivo(this)">O.MOT.</button>
           </div>
           <input id="f-motivo-val" type="hidden" />
@@ -247,7 +247,7 @@
         <div id="f-error" class="hidden text-red-400 text-xs bg-red-900/30 border border-red-800 rounded-lg px-3 py-2"></div>
 
         <button onclick="guardarMotivo()"
-          class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg transition">
+          class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg transition">
           Guardar motivo
         </button>
       </div>
@@ -258,7 +258,7 @@
 
 <!-- Mensaje flotante de éxito -->
 <div id="toast-ok"
-  class="fixed bottom-6 right-6 bg-green-700 text-white text-sm px-5 py-3 rounded-xl shadow-lg
+  class="fixed bottom-6 right-6 bg-emerald-700 text-white text-sm px-5 py-3 rounded-xl shadow-lg
          opacity-0 pointer-events-none transition-opacity duration-300 z-50">
   ✓ <span id="toast-msg"></span>
 </div>
@@ -282,16 +282,16 @@
     if (!e) return '<span class="text-slate-500">–</span>';
     const lc = e.toLowerCase();
     const color = lc.includes('done')||lc.includes('hecho')||lc.includes('complet')
-      ? 'text-green-400' : lc.includes('assign')||lc.includes('preparado')
-      ? 'text-blue-300'  : lc.includes('cancel')
-      ? 'text-red-400'   : 'text-slate-400';
+      ? 'text-emerald-400' : lc.includes('assign')||lc.includes('preparado')
+      ? 'text-indigo-300'  : lc.includes('cancel')
+      ? 'text-red-400'     : 'text-slate-400';
     return `<span class="${color} text-xs font-medium">${e}</span>`;
   }
 
   function miniProg(actual, total) {
     if (!total) return '<span class="text-slate-500 text-xs">–</span>';
     const pct = Math.min(Math.round(actual/total*100), 100);
-    const color = pct >= 100 ? 'bg-green-500' : pct >= 60 ? 'bg-blue-500' : 'bg-yellow-500';
+    const color = pct >= 100 ? 'bg-emerald-500' : pct >= 60 ? 'bg-indigo-500' : 'bg-amber-500';
     return `<div class="prog-bar w-full mb-1">
               <div class="prog-fill ${color}" style="width:${pct}%"></div>
             </div>
@@ -299,9 +299,9 @@
   }
 
   function motivoColor(m) {
-    return m === 'O.DEP.' ? 'bg-orange-700/40 text-orange-300 border border-orange-700'
-         : m === 'F.ALT'  ? 'bg-red-700/40 text-red-300 border border-red-700'
-         : m === 'W-DIF'  ? 'bg-yellow-700/40 text-yellow-300 border border-yellow-700'
+    return m === 'O.DEP.' ? 'bg-stone-800 text-amber-300 border border-amber-800'
+         : m === 'F.ALT'  ? 'bg-neutral-900 text-red-300 border border-red-900'
+         : m === 'W-DIF'  ? 'bg-stone-900 text-yellow-200 border border-yellow-900'
          :                   'bg-slate-700 text-slate-300 border border-slate-600';
   }
 
@@ -318,18 +318,18 @@
     tbody.innerHTML = lista.map((p, i) => {
       const bg = i % 2 === 0 ? 'bg-slate-800' : 'bg-slate-850';
       const chk = p.confirmado
-        ? '<span class="text-green-400 text-base">✓</span>'
+        ? '<span class="text-emerald-400 text-base">✓</span>'
         : '<span class="text-slate-600 text-base">○</span>';
       const ss_pick_t = p.ss_pick_total || p.pick_lines || 0;
       const gt = p.ss_corre_total
         ? Math.min(Math.round(p.ss_corre/p.ss_corre_total*100), 100) + '%'
         : '–';
-      const gtColor = gt === '100%' ? 'text-green-400 font-bold' : 'text-slate-400';
+      const gtColor = gt === '100%' ? 'text-emerald-400 font-bold' : 'text-slate-400';
 
       return `<tr class="${bg}">
         <td class="px-4 py-2.5 text-center">${chk}</td>
         <td class="px-4 py-2.5">
-          <span class="num font-bold text-slate-900 bg-yellow-300 px-2 py-0.5 rounded text-sm" style="white-space:nowrap;">
+          <span class="num font-bold text-slate-800 bg-amber-100 px-2 py-0.5 rounded text-sm" style="white-space:nowrap;">
             ${p.pedido}
           </span>
         </td>
@@ -360,7 +360,7 @@
     tbody.innerHTML = lista.map(m => `
       <tr class="border-b border-slate-700/50">
         <td class="px-4 py-2">
-          <span class="num font-bold text-slate-900 bg-yellow-300 px-2 py-0.5 rounded text-xs" style="white-space:nowrap;">
+          <span class="num font-bold text-slate-800 bg-amber-100 px-2 py-0.5 rounded text-xs" style="white-space:nowrap;">
             ${m.pedido}
           </span>
         </td>
@@ -372,7 +372,7 @@
         <td class="px-3 py-2 text-center text-slate-500 text-xs">${m.hora}</td>
         <td class="px-3 py-2 text-center">
           <button onclick="borrarMotivo(${m.id})"
-            class="text-red-500 hover:text-red-300 transition text-xs">✕</button>
+            class="text-red-400 hover:text-red-300 transition text-xs">✕</button>
         </td>
       </tr>`).join('');
   }

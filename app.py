@@ -127,13 +127,13 @@ def api_reporte_descargar():
 
         wb = openpyxl.Workbook()
 
-        header_fill  = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+        header_fill  = PatternFill(start_color='312E81', end_color='312E81', fill_type='solid')
         header_font  = Font(color='FFFFFF', bold=True, size=11)
         center_align = Alignment(horizontal='center', vertical='center')
-        alta_fill    = PatternFill(start_color='C00000', end_color='C00000', fill_type='solid')
-        media_fill   = PatternFill(start_color='FF8C00', end_color='FF8C00', fill_type='solid')
-        baja_fill    = PatternFill(start_color='2E75B6', end_color='2E75B6', fill_type='solid')
-        ok_fill      = PatternFill(start_color='375623', end_color='375623', fill_type='solid')
+        alta_fill    = PatternFill(start_color='92400E', end_color='92400E', fill_type='solid')
+        media_fill   = PatternFill(start_color='4C1D95', end_color='4C1D95', fill_type='solid')
+        baja_fill    = PatternFill(start_color='075985', end_color='075985', fill_type='solid')
+        ok_fill      = PatternFill(start_color='064E3B', end_color='064E3B', fill_type='solid')
 
         # ── Hoja 1: Pedidos ──────────────────────────────────────────────────
         ws1 = wb.active

@@ -12,7 +12,7 @@
 
     /* Toda la página ocupa exactamente la pantalla, sin scroll */
     html, body { width: 100vw; height: 100vh; overflow: hidden; }
-    body { background: #060c1a; color: #e2e8f0; display: flex; flex-direction: column; }
+    body { background: #0f172a; color: #f1f5f9; display: flex; flex-direction: column; }
 
     /* Números y pedidos en fuente condensada */
     .num { font-family: 'Barlow Condensed', sans-serif; }
@@ -33,18 +33,18 @@
     .row-anim { animation: row-in .3s ease; }
 
     /* Barras de progreso */
-    .pbar-bg { background: #1e293b; border-radius: 4px; height: 8px; }
+    .pbar-bg { background: #334155; border-radius: 4px; height: 8px; }
     .pbar-fill { border-radius: 4px; height: 8px; transition: width .6s ease; }
 
     /* Prioridades */
-    .tag-alta  { background:#b91c1c; color:#fff; }
-    .tag-media { background:#c2410c; color:#fff; }
-    .tag-baja  { background:#1d4ed8; color:#fff; }
+    .tag-alta  { background:#b45309; color:#fff; }
+    .tag-media { background:#6d28d9; color:#fff; }
+    .tag-baja  { background:#0369a1; color:#fff; }
     .tag       { padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 800;
                   letter-spacing: .08em; text-transform: uppercase; }
 
     /* Líneas separadoras de la tabla */
-    .tbl-row { border-bottom: 1px solid #0f172a; }
+    .tbl-row { border-bottom: 1px solid #1e293b; }
     .tbl-row:last-child { border-bottom: none; }
 
     /* Columnas fijas */
@@ -69,15 +69,15 @@
 <!-- ═══════════════════════════════════════════════════════════
      HEADER — siempre visible
 ════════════════════════════════════════════════════════════ -->
-<header style="background:#0a1628; border-bottom: 2px solid #1e3a5f; flex-shrink:0;"
+<header style="background:#1e293b; border-bottom: 2px solid #334155; flex-shrink:0;"
         class="px-6 py-3 flex items-center justify-between">
 
   <!-- Título -->
   <div class="flex items-center gap-5">
-    <div class="num font-black text-blue-400 uppercase tracking-widest" style="font-size:26px; letter-spacing:.12em;">
+    <div class="num font-black text-indigo-400 uppercase tracking-widest" style="font-size:26px; letter-spacing:.12em;">
       Panel Distri
     </div>
-    <div style="width:2px; height:32px; background:#1e3a5f;"></div>
+    <div style="width:2px; height:32px; background:#334155;"></div>
     <div class="num font-bold text-slate-300 uppercase tracking-wide" style="font-size:18px;">
       Pedidos Confirmados
     </div>
@@ -91,7 +91,7 @@
     </div>
     <div class="text-center">
       <div class="text-xs text-slate-500 uppercase tracking-widest">Hora</div>
-      <div id="hdr-hora" class="num font-black text-yellow-400" style="font-size:28px; letter-spacing:.08em; min-width:110px;">
+      <div id="hdr-hora" class="num font-black text-amber-400" style="font-size:28px; letter-spacing:.08em; min-width:110px;">
         --:--:--
       </div>
     </div>
@@ -102,19 +102,19 @@
     <div class="flex flex-col gap-1.5 text-right">
       <div class="flex items-center justify-end gap-2">
         <span class="text-slate-500 text-xs uppercase tracking-widest">P. Menú (Conf. Clte)</span>
-        <div id="dot-pmenu" class="w-3 h-3 rounded-full bg-slate-700"></div>
+        <div id="dot-pmenu" class="w-3 h-3 rounded-full bg-slate-600"></div>
       </div>
       <div class="flex items-center justify-end gap-2">
         <span class="text-slate-500 text-xs uppercase tracking-widest">Conf. WSTD</span>
-        <div id="dot-wstd" class="w-3 h-3 rounded-full bg-slate-700"></div>
+        <div id="dot-wstd" class="w-3 h-3 rounded-full bg-slate-600"></div>
       </div>
     </div>
     <div class="flex flex-col items-center gap-1">
-      <div id="live-dot" class="w-4 h-4 rounded-full bg-slate-700 pulse"></div>
-      <span class="text-xs text-slate-600 uppercase tracking-wider">live</span>
+      <div id="live-dot" class="w-4 h-4 rounded-full bg-slate-600 pulse"></div>
+      <span class="text-xs text-slate-500 uppercase tracking-wider">live</span>
     </div>
     <a href="/reporte"
-       style="background:#1e293b; border:1px solid #334155;"
+       style="background:#1e293b; border:1px solid #475569;"
        class="text-slate-400 hover:text-slate-200 text-xs px-3 py-1.5 rounded-lg transition">
       ⚙ Gestión
     </a>
@@ -128,7 +128,7 @@
 
   <!-- Encabezados de columna -->
   <div class="flex items-center px-3 pb-2"
-       style="border-bottom: 1px solid #1e293b; flex-shrink:0;">
+       style="border-bottom: 1px solid #334155; flex-shrink:0;">
     <div class="c0"></div>
     <div class="c1 text-xs font-bold text-slate-500 uppercase tracking-widest">Pedido</div>
     <div class="c2 text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente</div>
@@ -152,30 +152,30 @@
 <!-- ═══════════════════════════════════════════════════════════
      FILA INFERIOR: INFORME + MOTIVOS
 ════════════════════════════════════════════════════════════ -->
-<footer style="flex-shrink:0; height:220px; border-top:2px solid #1e3a5f;
-               display:grid; grid-template-columns:340px 1fr; gap:0; background:#060c1a;">
+<footer style="flex-shrink:0; height:220px; border-top:2px solid #334155;
+               display:grid; grid-template-columns:340px 1fr; gap:0; background:#0f172a;">
 
   <!-- Bloque INFORME -->
-  <div style="border-right:2px solid #1e3a5f; padding:14px 20px; display:flex; flex-direction:column; gap:10px;">
-    <div class="num font-black text-slate-400 uppercase tracking-widest" style="font-size:11px;">
+  <div style="border-right:2px solid #334155; padding:14px 20px; display:flex; flex-direction:column; gap:10px;">
+    <div class="num font-black text-slate-500 uppercase tracking-widest" style="font-size:11px;">
       ▐ Informe del día
     </div>
 
     <!-- KPIs en 2×2 -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; flex:1;">
-      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
-        <div id="kpi-activas" class="num font-black text-blue-400" style="font-size:36px; line-height:1;">–</div>
+      <div style="background:#162032; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-activas" class="num font-black text-indigo-400" style="font-size:36px; line-height:1;">–</div>
         <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">Órdenes activas</div>
       </div>
-      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
-        <div id="kpi-fin" class="num font-black text-green-400" style="font-size:36px; line-height:1;">–</div>
+      <div style="background:#162032; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-fin" class="num font-black text-emerald-400" style="font-size:36px; line-height:1;">–</div>
         <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">Finalizadas hoy</div>
       </div>
-      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
-        <div id="kpi-ctrl" class="num font-black text-yellow-400" style="font-size:36px; line-height:1;">–</div>
+      <div style="background:#162032; border-radius:8px; padding:10px 14px;">
+        <div id="kpi-ctrl" class="num font-black text-amber-400" style="font-size:36px; line-height:1;">–</div>
         <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">En control</div>
       </div>
-      <div style="background:#0a1628; border-radius:8px; padding:10px 14px;">
+      <div style="background:#162032; border-radius:8px; padding:10px 14px;">
         <div id="kpi-cola" class="num font-black text-slate-300" style="font-size:36px; line-height:1;">–</div>
         <div class="text-xs text-slate-500 uppercase tracking-wider mt-0.5">Total en cola</div>
       </div>
@@ -184,13 +184,13 @@
 
   <!-- Bloque MOTIVOS -->
   <div style="padding:14px 16px; display:flex; flex-direction:column; gap:8px; overflow:hidden;">
-    <div class="num font-black text-slate-400 uppercase tracking-widest" style="font-size:11px;">
+    <div class="num font-black text-slate-500 uppercase tracking-widest" style="font-size:11px;">
       ▐ Motivos de Órdenes Incompletas
     </div>
 
     <!-- Encabezado tabla motivos -->
     <div style="display:grid; grid-template-columns:100px 1fr 90px 130px 1fr 60px;
-                gap:8px; border-bottom:1px solid #1e293b; padding-bottom:6px;">
+                gap:8px; border-bottom:1px solid #334155; padding-bottom:6px;">
       <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Pedido</span>
       <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Cliente</span>
       <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Motivo</span>
@@ -225,7 +225,7 @@
   function progBar(actual, total) {
     if (!total) return '<span class="text-slate-600" style="font-size:12px;">–</span>';
     const pct   = Math.min(Math.round(actual/total*100), 100);
-    const color = pct >= 100 ? '#22c55e' : pct >= 60 ? '#3b82f6' : '#eab308';
+    const color = pct >= 100 ? '#10b981' : pct >= 60 ? '#6366f1' : '#f59e0b';
     return `<div class="pbar-bg w-full" style="margin-bottom:3px;">
               <div class="pbar-fill" style="width:${pct}%; background:${color};"></div>
             </div>
@@ -239,9 +239,9 @@
   }
 
   function mColor(m) {
-    return m === 'O.DEP.' ? 'background:#7c2d12;color:#fed7aa;'
-         : m === 'F.ALT'  ? 'background:#7f1d1d;color:#fecaca;'
-         : m === 'W-DIF'  ? 'background:#713f12;color:#fef08a;'
+    return m === 'O.DEP.' ? 'background:#1c1917;color:#fdba74;'
+         : m === 'F.ALT'  ? 'background:#1c0a0a;color:#fca5a5;'
+         : m === 'W-DIF'  ? 'background:#1c1505;color:#fde68a;'
          :                   'background:#1e293b;color:#94a3b8;';
   }
 
@@ -255,19 +255,19 @@
 
     body.innerHTML = pedidos.map((p, i) => {
       const chk     = p.confirmado
-        ? '<span style="color:#22c55e; font-size:18px;">✓</span>'
-        : '<span style="color:#1e293b; font-size:18px;">○</span>';
+        ? '<span style="color:#34d399; font-size:18px;">✓</span>'
+        : '<span style="color:#334155; font-size:18px;">○</span>';
       const pickTotal = p.ss_pick_total || p.pick_lines || 0;
       const gt      = p.ss_corre_total
         ? Math.min(Math.round(p.ss_corre / p.ss_corre_total * 100), 100) + '%' : '–';
-      const gtColor = gt === '100%' ? '#22c55e' : '#64748b';
-      const bg      = i % 2 === 0 ? '#080e1e' : '#060c1a';
+      const gtColor = gt === '100%' ? '#34d399' : '#64748b';
+      const bg      = i % 2 === 0 ? '#1e293b' : '#162032';
 
       return `<div class="tbl-row row-anim flex items-center px-3"
                    style="padding-top:7px; padding-bottom:7px; background:${bg};">
         <div class="c0 flex justify-center">${chk}</div>
         <div class="c1">
-          <span class="num font-black" style="font-size:14px; color:#0a1628; background:#fde68a;
+          <span class="num font-black" style="font-size:14px; color:#1e293b; background:#fef3c7;
                 padding:3px 10px; border-radius:5px; letter-spacing:.04em; white-space:nowrap;">
             ${p.pedido}
           </span>
@@ -302,8 +302,8 @@
     }
     body.innerHTML = motivos.map(m => `
       <div style="display:grid; grid-template-columns:100px 1fr 90px 130px 1fr 60px;
-                  gap:8px; padding:5px 0; border-bottom:1px solid #0f172a; align-items:center;">
-        <span class="num font-black" style="font-size:12px; color:#0a1628; background:#fde68a;
+                  gap:8px; padding:5px 0; border-bottom:1px solid #1e293b; align-items:center;">
+        <span class="num font-black" style="font-size:12px; color:#1e293b; background:#fef3c7;
                 padding:2px 8px; border-radius:4px; white-space:nowrap;">${m.pedido}</span>
         <span style="font-size:12px; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
               title="${m.cliente}">${m.cliente||'–'}</span>
@@ -333,13 +333,13 @@
 
       // Dots verdes = OK
       ['dot-pmenu','dot-wstd'].forEach(id =>
-        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-green-500');
-      document.getElementById('live-dot').style.background = '#22c55e';
+        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-emerald-400');
+      document.getElementById('live-dot').style.background = '#34d399';
 
     } catch(e) {
       ['dot-pmenu','dot-wstd'].forEach(id =>
-        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-red-600');
-      document.getElementById('live-dot').style.background = '#dc2626';
+        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-red-400');
+      document.getElementById('live-dot').style.background = '#f87171';
     }
   }
 
