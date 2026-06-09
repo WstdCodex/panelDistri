@@ -73,16 +73,16 @@ def get_pedidos_estado():
             with conn.cursor() as cur:
                 cur.execute("""
                     SELECT
-                        ost.order_name                AS sale_order,
-                        COALESCE(sq.client_name, '') AS client_name,
-                        COALESCE(sq.pick_lines,  0)  AS pick_lines,
+                        ost.order_name                                      AS sale_order,
+                        COALESCE(ost.client_name, sq.client_name, '')       AS client_name,
+                        COALESCE(sq.pick_lines, 0)                          AS pick_lines,
                         ost.current_state,
                         ost.last_checked,
+                        ost.confirmed_at,
                         pm.prioridad,
                         pm.pickea,
                         pm.corre,
                         pm.confirmado,
-                        pm.fecha_pedido,
                         pm.cod_cliente
                     FROM order_state_tracking ost
                     LEFT JOIN sales_queue sq        ON sq.sale_order = ost.order_name
@@ -108,7 +108,7 @@ def get_pedidos_estado():
                         'pickea':              row['pickea'] or '',
                         'corre':               row['corre'] or '',
                         'confirmado':          row['confirmado'] or False,
-                        'fecha_pedido':        row['fecha_pedido'].strftime('%d/%m') if row['fecha_pedido'] else '',
+                        'fecha_pedido':        row['confirmed_at'].strftime('%d/%m') if row['confirmed_at'] else '',
                         'cod_cliente':         row['cod_cliente'] or '',
                         'ss_pick':             0,
                         'ss_pick_total':       row['pick_lines'] or 0,
