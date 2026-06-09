@@ -101,17 +101,7 @@
   </div>
 
   <!-- Derecha: estado conexión -->
-  <div class="flex items-center gap-6">
-    <div class="flex flex-col gap-1.5 text-right">
-      <div class="flex items-center justify-end gap-2">
-        <span class="text-slate-500 text-xs uppercase tracking-widest">P. Menú (Conf. Clte)</span>
-        <div id="dot-pmenu" class="w-3 h-3 rounded-full bg-slate-600"></div>
-      </div>
-      <div class="flex items-center justify-end gap-2">
-        <span class="text-slate-500 text-xs uppercase tracking-widest">Conf. WSTD</span>
-        <div id="dot-wstd" class="w-3 h-3 rounded-full bg-slate-600"></div>
-      </div>
-    </div>
+  <div class="flex items-center gap-4">
     <div class="flex flex-col items-center gap-1">
       <div id="live-dot" class="w-4 h-4 rounded-full bg-slate-600 pulse"></div>
       <span class="text-xs text-slate-500 uppercase tracking-wider">live</span>
@@ -361,14 +351,9 @@
       document.getElementById('kpi-ctrl').textContent    = data.stats?.en_control ?? '–';
       document.getElementById('kpi-cola').textContent    = data.stats?.total_cola ?? '–';
 
-      // Dots verdes = OK
-      ['dot-pmenu','dot-wstd'].forEach(id =>
-        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-emerald-400');
       document.getElementById('live-dot').style.background = '#34d399';
 
     } catch(e) {
-      ['dot-pmenu','dot-wstd'].forEach(id =>
-        document.getElementById(id).className = 'w-3 h-3 rounded-full bg-red-400');
       document.getElementById('live-dot').style.background = '#f87171';
     }
   }

@@ -41,3 +41,20 @@ _CONFIGS = {
 }
 
 CONFIG = _CONFIGS[MODE]
+
+# ─── DB de usuarios compartida (login) ───────────────────────────────────────
+
+LOGIN_DB = {
+    'host':     'wstd.com.ar',
+    'database': 'usuarios',
+    'user':     'wstd',
+    'password': 'Wstd.admin.1822',
+}
+
+def login_db_config():
+    return LOGIN_DB
+
+# ─── Odoo (autenticación XML-RPC) ─────────────────────────────────────────────
+
+ODOO_URL = 'https://wstd.ar'
+ODOO_DB  = 'odoo'

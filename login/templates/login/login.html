@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Distri — Iniciar sesión</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap');
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .num { font-family: 'Barlow Condensed', sans-serif; }
+    body { background: #0f172a; }
+    input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+      -webkit-text-fill-color: #f1f5f9 !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-sm">
+
+    <!-- Logo / Título -->
+    <div class="text-center mb-8">
+      <div class="num font-black text-indigo-400 uppercase tracking-widest mb-1" style="font-size:32px; letter-spacing:.14em;">
+        Panel Distri
+      </div>
+      <p class="text-slate-500 text-sm">Ingresá tus credenciales para continuar</p>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#1e293b; border:1px solid #334155;" class="rounded-2xl p-8 shadow-2xl">
+
+      <!-- Error -->
+      <div id="errorMessage" class="hidden mb-5 px-4 py-3 rounded-lg text-sm"
+           style="background:#1c0a0a; color:#fca5a5; border:1px solid #7f1d1d;"></div>
+
+      <form id="loginForm" onsubmit="return handleLogin(event)" class="space-y-5">
+        <div>
+          <label for="username" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            Usuario
+          </label>
+          <input type="text" name="username" id="username" required autocomplete="username"
+                 placeholder="usuario o correo Odoo"
+                 style="background:#0f172a; border:1px solid #475569; color:#f1f5f9; border-radius:8px;
+                        padding:10px 14px; font-size:14px; outline:none; width:100%;
+                        transition:border-color .2s;"
+                 onfocus="this.style.borderColor='#818cf8'"
+                 onblur="this.style.borderColor='#475569'">
+        </div>
+
+        <div>
+          <label for="password" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            Contraseña
+          </label>
+          <input type="password" name="password" id="password" required autocomplete="current-password"
+                 placeholder="••••••••"
+                 style="background:#0f172a; border:1px solid #475569; color:#f1f5f9; border-radius:8px;
+                        padding:10px 14px; font-size:14px; outline:none; width:100%;
+                        transition:border-color .2s;"
+                 onfocus="this.style.borderColor='#818cf8'"
+                 onblur="this.style.borderColor='#475569'">
+        </div>
+
+        <button type="submit" id="submitBtn"
+                style="background:#4f46e5; border:none; border-radius:8px; color:#fff; cursor:pointer;
+                       font-size:14px; font-weight:600; padding:11px; width:100%;
+                       transition:background .15s;"
+                onmouseover="this.style.background='#4338ca'"
+                onmouseout="this.style.background='#4f46e5'">
+          <span id="btnText">Acceder</span>
+        </button>
+      </form>
+
+      <p class="text-center text-xs text-slate-600 mt-5">
+        Después de {{ MAX_LOGIN_ATTEMPTS }} intentos fallidos la cuenta se bloquea.
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    async function handleLogin(event) {
+      event.preventDefault();
+      const errorDiv  = document.getElementById('errorMessage');
+      const btnText   = document.getElementById('btnText');
+      const submitBtn = document.getElementById('submitBtn');
+      errorDiv.classList.add('hidden');
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      submitBtn.disabled = true;
+      btnText.textContent = 'Ingresando…';
+
+      try {
+        const res  = await fetch('{{ url_for("login_bp.login") }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          const target = '{{ redirect_url or url_for("tv_panel") }}';
+          window.location.href = target;
+        } else {
+          errorDiv.textContent = data.message || 'No se pudo iniciar sesión';
+          errorDiv.classList.remove('hidden');
+          submitBtn.disabled = false;
+          btnText.textContent = 'Acceder';
+        }
+      } catch (e) {
+        errorDiv.textContent = 'Error de conexión. Intentá nuevamente.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        btnText.textContent = 'Acceder';
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

@@ -13,37 +13,72 @@ Rutas:
   /api/reporte/descargar   → GET descargar Excel del día
 """
 
-from flask import Flask, render_template, jsonify, send_file, request, redirect, url_for
+from flask import Flask, render_template, jsonify, send_file, request, redirect, url_for, session
+from functools import wraps
 from datetime import datetime, date
 import io
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 
 import db
+from config import ODOO_URL, ODOO_DB
+from login.blueprint import create_login_blueprint, init_login_db
 
 app = Flask(__name__)
 app.secret_key = 'paneldistri-2024-secret'
 
+app.config.update({
+    'LOGIN_APP_NAME':            'panelDistri',
+    'LOGIN_MAX_FAILED_ATTEMPTS': 3,
+    'DB_HOST':     'wstd.com.ar',
+    'DB_NAME':     'usuarios',
+    'DB_USER':     'wstd',
+    'DB_PASSWORD': 'Wstd.admin.1822',
+    'ODOO_URL':    ODOO_URL,
+    'ODOO_DB':     ODOO_DB,
+    'SESSION_COOKIE_NAME': 'panelDistriSession',
+})
 
-# ─── Inicialización ───────────────────────────────────────────────────────────
+init_login_db(app)
+app.register_blueprint(create_login_blueprint(app), url_prefix='')
 
 with app.app_context():
     db.init_panel_tables()
 
 
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'username' not in session:
+            return redirect(url_for('login_bp.login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login_bp.login'))
+
+
 # ─── Rutas principales ────────────────────────────────────────────────────────
 
 @app.route('/')
+@login_required
 def index():
     return redirect(url_for('reporte'))
 
 
 @app.route('/tv-panel')
+@login_required
 def tv_panel():
     return render_template('tv_panel.html')
 
 
 @app.route('/reporte')
+@login_required
 def reporte():
     return render_template('reporte.html')
 
@@ -51,6 +86,7 @@ def reporte():
 # ─── API JSON ─────────────────────────────────────────────────────────────────
 
 @app.route('/api/pedidos/estado')
+@login_required
 def api_estado():
     pedidos = db.get_pedidos_estado()
     stats   = db.get_stats_hoy()
@@ -65,6 +101,7 @@ def api_estado():
 
 
 @app.route('/api/pedido/meta', methods=['POST'])
+@login_required
 def api_pedido_meta():
     data = request.get_json(silent=True) or {}
     pedido = data.get('pedido', '').strip()
@@ -86,6 +123,7 @@ def api_pedido_meta():
 
 
 @app.route('/api/motivo', methods=['POST'])
+@login_required
 def api_motivo():
     data = request.get_json(silent=True) or {}
     pedido = data.get('pedido', '').strip()
@@ -107,6 +145,7 @@ def api_motivo():
 
 
 @app.route('/api/motivo/<int:motivo_id>/borrar', methods=['POST'])
+@login_required
 def api_motivo_borrar(motivo_id):
     ok = db.eliminar_motivo(motivo_id)
     if ok:
@@ -117,6 +156,7 @@ def api_motivo_borrar(motivo_id):
 # ─── Descarga de reporte ──────────────────────────────────────────────────────
 
 @app.route('/api/reporte/descargar')
+@login_required
 def api_reporte_descargar():
     fecha_str = request.args.get('fecha', date.today().strftime('%Y-%m-%d'))
 
@@ -160,12 +200,10 @@ def api_reporte_descargar():
                 'Sí' if p['confirmado'] else 'No',
             ]
             ws1.append(row)
-            # Color de prioridad
             prio = p['prioridad'].upper()
             fill = alta_fill if prio == 'ALTA' else media_fill if prio == 'MEDIA' else baja_fill
             ws1.cell(row=ws1.max_row, column=5).fill = fill
             ws1.cell(row=ws1.max_row, column=5).font = Font(color='FFFFFF', bold=True)
-            # Color confirmado
             if p['confirmado']:
                 ws1.cell(row=ws1.max_row, column=11).fill = ok_fill
                 ws1.cell(row=ws1.max_row, column=11).font = Font(color='FFFFFF')
