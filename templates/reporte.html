@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte Diario — Panel Distri</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0f172a; }
+  </style>
+</head>
+<body class="min-h-screen text-slate-200 flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-700 px-8 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="/tv-panel"
+        class="text-slate-400 hover:text-white text-sm transition flex items-center gap-1">
+        ← Panel TV
+      </a>
+      <div class="h-5 w-px bg-slate-700"></div>
+      <div class="text-xl font-bold text-blue-400 tracking-wide">Panel Distri</div>
+      <span class="text-slate-500 text-sm">/ Reporte Diario</span>
+    </div>
+    <div id="fecha-hoy" class="text-sm text-slate-400"></div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="flex-1 flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-xl">
+
+      <!-- Card principal -->
+      <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-8">
+
+        <div class="text-center mb-8">
+          <div class="text-5xl mb-4">📊</div>
+          <h1 class="text-2xl font-extrabold text-white">Reporte Diario de Distribución</h1>
+          <p class="text-slate-400 mt-2 text-sm">
+            Descargá el informe consolidado del día con pedidos, estadísticas y motivos de órdenes incompletas.
+          </p>
+        </div>
+
+        <!-- Selector de fecha -->
+        <div class="mb-6">
+          <label class="block text-xs text-slate-400 uppercase tracking-widest mb-2">Fecha del reporte</label>
+          <input id="fecha-input" type="date"
+            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white
+                   focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" />
+        </div>
+
+        <!-- Descripción del contenido -->
+        <div class="bg-slate-900 rounded-xl p-4 mb-6 space-y-2">
+          <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+            Contenido del archivo Excel
+          </div>
+          <div class="flex items-center gap-3 text-sm text-slate-300">
+            <span class="text-blue-400">📋</span>
+            <span><strong>Hoja 1:</strong> Lista completa de pedidos con estado, prioridad y progreso</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm text-slate-300">
+            <span class="text-green-400">📈</span>
+            <span><strong>Hoja 2:</strong> Informe con KPIs del día (activas, finalizadas, en control)</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm text-slate-300">
+            <span class="text-red-400">⚠️</span>
+            <span><strong>Hoja 3:</strong> Motivos de órdenes incompletas registrados</span>
+          </div>
+        </div>
+
+        <!-- Botón de descarga -->
+        <button id="btn-descargar" onclick="descargarReporte()"
+          class="w-full py-4 rounded-xl text-base font-bold bg-blue-600 hover:bg-blue-500
+                 text-white transition flex items-center justify-center gap-3 shadow-lg
+                 hover:shadow-blue-500/25 active:scale-95">
+          <span id="btn-icon">⬇️</span>
+          <span id="btn-text">Descargar Reporte Excel</span>
+        </button>
+
+        <!-- Mensaje de error/éxito -->
+        <div id="msg-descarga" class="hidden mt-4 text-center text-sm rounded-lg px-4 py-3"></div>
+
+      </div>
+
+      <!-- Preview de datos en tiempo real -->
+      <div class="mt-6 bg-slate-800 rounded-2xl border border-slate-700 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-sm font-bold text-slate-300 uppercase tracking-widest">
+            Vista previa del día
+          </div>
+          <button onclick="cargarPreview()"
+            class="text-xs text-blue-400 hover:text-blue-300 transition">
+            ↻ Actualizar
+          </button>
+        </div>
+
+        <div id="preview-stats" class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-900 rounded-lg p-3 text-center">
+            <div class="text-2xl font-black text-blue-400" id="pv-activas">–</div>
+            <div class="text-xs text-slate-500 mt-1">Órdenes activas</div>
+          </div>
+          <div class="bg-slate-900 rounded-lg p-3 text-center">
+            <div class="text-2xl font-black text-green-400" id="pv-fin">–</div>
+            <div class="text-xs text-slate-500 mt-1">Finalizadas hoy</div>
+          </div>
+          <div class="bg-slate-900 rounded-lg p-3 text-center">
+            <div class="text-2xl font-black text-yellow-400" id="pv-ctrl">–</div>
+            <div class="text-xs text-slate-500 mt-1">En control ahora</div>
+          </div>
+          <div class="bg-slate-900 rounded-lg p-3 text-center">
+            <div class="text-2xl font-black text-slate-300" id="pv-cola">–</div>
+            <div class="text-xs text-slate-500 mt-1">Total en cola</div>
+          </div>
+        </div>
+
+        <div id="preview-pedidos" class="mt-4">
+          <!-- Se rellena con JS -->
+        </div>
+
+        <div id="preview-error" class="hidden text-red-400 text-xs mt-2 text-center"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Setear fecha de hoy por defecto
+    const hoy = new Date();
+    const padded = d => String(d).padStart(2, '0');
+    const fechaISO = `${hoy.getFullYear()}-${padded(hoy.getMonth()+1)}-${padded(hoy.getDate())}`;
+    const fechaLegible = `${padded(hoy.getDate())}/${padded(hoy.getMonth()+1)}/${hoy.getFullYear()}`;
+
+    document.getElementById('fecha-input').value = fechaISO;
+    document.getElementById('fecha-hoy').textContent = `Hoy: ${fechaLegible}`;
+
+    // Descarga del reporte
+    async function descargarReporte() {
+      const fecha  = document.getElementById('fecha-input').value;
+      const btn    = document.getElementById('btn-descargar');
+      const msgDiv = document.getElementById('msg-descarga');
+
+      btn.disabled = true;
+      document.getElementById('btn-icon').textContent = '⏳';
+      document.getElementById('btn-text').textContent = 'Generando reporte…';
+      msgDiv.classList.add('hidden');
+
+      try {
+        const url = `/api/reporte/descargar?fecha=${encodeURIComponent(fecha)}`;
+        // Trigger descarga via anchor
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_distri_${fecha}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        msgDiv.className = 'mt-4 text-center text-sm rounded-lg px-4 py-3 bg-green-900 text-green-300 border border-green-700';
+        msgDiv.textContent = '✓ Reporte generado. La descarga comenzará en un momento.';
+        msgDiv.classList.remove('hidden');
+
+        setTimeout(() => msgDiv.classList.add('hidden'), 4000);
+      } catch (err) {
+        msgDiv.className = 'mt-4 text-center text-sm rounded-lg px-4 py-3 bg-red-900 text-red-300 border border-red-700';
+        msgDiv.textContent = '✗ Error al generar el reporte: ' + err.message;
+        msgDiv.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        document.getElementById('btn-icon').textContent = '⬇️';
+        document.getElementById('btn-text').textContent = 'Descargar Reporte Excel';
+      }
+    }
+
+    // Preview de datos
+    async function cargarPreview() {
+      const errDiv = document.getElementById('preview-error');
+      errDiv.classList.add('hidden');
+      try {
+        const res  = await fetch('/api/pedidos/estado');
+        const data = await res.json();
+
+        document.getElementById('pv-activas').textContent = data.stats?.ordenes_activas ?? '–';
+        document.getElementById('pv-fin').textContent     = data.stats?.finalizadas_hoy ?? '–';
+        document.getElementById('pv-ctrl').textContent    = data.stats?.en_control ?? '–';
+        document.getElementById('pv-cola').textContent    = data.stats?.total_cola ?? '–';
+
+        const pedidos = data.pedidos || [];
+        const cont = document.getElementById('preview-pedidos');
+
+        if (!pedidos.length) {
+          cont.innerHTML = '<div class="text-slate-500 text-xs text-center py-2">Sin pedidos en cola.</div>';
+          return;
+        }
+
+        const priorColor = p => {
+          switch ((p||'').toUpperCase()) {
+            case 'ALTA': return 'text-red-400';
+            case 'MEDIA': return 'text-orange-400';
+            default: return 'text-blue-400';
+          }
+        };
+
+        cont.innerHTML = `
+          <div class="text-xs font-bold text-slate-400 uppercase mb-2">
+            Pedidos en cola (${pedidos.length})
+          </div>
+          <div class="space-y-1 max-h-48 overflow-y-auto">
+            ${pedidos.map(p => `
+              <div class="flex items-center justify-between text-xs px-2 py-1.5 bg-slate-900 rounded-lg">
+                <span class="font-bold text-yellow-300">${p.pedido}</span>
+                <span class="text-slate-400 truncate mx-2 flex-1">${p.cliente || '–'}</span>
+                <span class="font-bold ${priorColor(p.prioridad)}">${p.prioridad || '–'}</span>
+              </div>`).join('')}
+          </div>`;
+      } catch (err) {
+        errDiv.textContent = 'No se pudo conectar al servidor: ' + err.message;
+        errDiv.classList.remove('hidden');
+      }
+    }
+
+    cargarPreview();
+  </script>
+</body>
+</html>
